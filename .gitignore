@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+build/
+dist/
+*.spec.bak
+.coverage
+htmlcov/
+*.zip
+*.sha256
+.idea/
+.vscode/
+.agents/
