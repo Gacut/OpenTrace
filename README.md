@@ -1,4 +1,5 @@
 # OpenTrace
+<img width="1983" height="793" alt="OpenTraceBaner" src="https://github.com/user-attachments/assets/560ccaea-c76b-4847-be24-cfc06c7ed107" />
 
 OpenTrace is a private-by-design, offline desktop workspace for organizing
 OSINT investigations. It provides a visual investigation board without
