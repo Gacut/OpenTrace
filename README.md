@@ -79,6 +79,28 @@ Paths stored in the database are relative.
 The global OSINT tool library is stored in the user's application configuration
 directory and is intentionally independent of individual investigations.
 
+### Backing up the OSINT tool library
+
+On Windows, user-defined OSINT tools and categories are stored in:
+
+```text
+%LOCALAPPDATA%\Local OSINT Tools\OpenTrace\osint_tools.json
+```
+
+The environment variable usually expands to a path similar to:
+
+```text
+C:\Users\YourName\AppData\Local\Local OSINT Tools\OpenTrace\osint_tools.json
+```
+
+This file is global to the current Windows user and is not included when an
+individual investigation is packed to ZIP. To create a manual backup, close
+OpenTrace and copy `osint_tools.json` to a safe location. To restore the
+library, close OpenTrace and replace the existing file with the backed-up copy.
+
+The file is regular, unencrypted JSON. It is intended for tool names, links,
+descriptions, and categories—not passwords, API keys, or authentication tokens.
+
 ## Privacy and network behavior
 
 OpenTrace does not send telemetry and does not automatically query external
