@@ -72,6 +72,12 @@ GitHub Release assets.
 
 ## Investigation data
 
+> [!CAUTION]
+> **Create regular manual backups of your investigation folders.** OpenTrace is
+> under active development and may still contain bugs that could result in data
+> loss or corruption. Do not keep the only copy of an important investigation
+> in a single location.
+
 An investigation is a regular portable directory. SQLite stores its metadata,
 while imported images are copied into the investigation's `media/` directory.
 Paths stored in the database are relative.
