@@ -19,6 +19,8 @@ EN = {
     "Rozpakuj sprawę z pliku ZIP…": "Unpack case from ZIP…",
     "Zamknij sprawę": "Close case", "Dodaj notatkę": "Add note",
     "Dodaj pinezkę": "Add pin", "Dodaj obraz…": "Add image…",
+    "Nowa notatka": "New note", "Nowa pinezka": "New pin",
+    "Dodaj obraz": "Add image",
     "Połącz zaznaczone": "Connect selected", "Usuń zaznaczone": "Delete selected",
     "Dopasuj wszystko": "Fit all", "Pokaż siatkę": "Show grid", "Szukaj…": "Search…",
     "Statystyki sprawy": "Case statistics", "Tylko odczyt": "Read-only",
@@ -74,15 +76,36 @@ EN = {
     "Zablokuj": "Lock", "Odblokuj": "Unlock",
     "Zmień kolor linii": "Change line color", "Edytuj znaczenie relacji":
         "Edit relationship meaning", "Utwórz zadanie": "Create task",
+    "Znaczenie relacji": "Relationship meaning",
+    "zna": "knows", "jest powiązany z": "is connected to",
+    "należy do": "belongs to", "pracuje dla": "works for",
+    "jest właścicielem": "owns", "korzysta z": "uses",
+    "kontaktował się z": "contacted", "mieszka w": "lives in",
+    "przebywał w": "stayed in", "opublikował": "published",
+    "udostępnił": "shared", "jest autorem": "is the author of",
+    "jest kopią": "is a copy of",
+    "może być tą samą osobą": "may be the same person as",
+    "używa tego samego pseudonimu": "uses the same alias",
+    "używa tego samego adresu e-mail": "uses the same email address",
+    "używa tego samego numeru telefonu": "uses the same phone number",
+    "używa tego samego urządzenia": "uses the same device",
+    "wystąpił w tym samym miejscu": "appeared in the same place",
+    "wydarzyło się przed": "happened before",
+    "wydarzyło się po": "happened after",
+    "potwierdza": "supports", "przeczy": "contradicts",
+    "relacja nieznana": "unknown relationship",
     "Dodaj zdjęcie": "Add image", "Wyśrodkuj widok tutaj": "Center view here",
     "Polski": "Polish", "Angielski": "English", "Język": "Language",
     "Język:": "Language:",
     "Dodaj narzędzie OSINT": "Add OSINT tool", "Edytuj narzędzie": "Edit tool",
+    "+ Kategoria": "+ Category", "Bez kategorii": "Uncategorized",
+    "Opis zastosowania:": "Usage description:",
     "Wybierz narzędzie.": "Select a tool.", "Zmień nazwę": "Rename",
     "Usuń kategorię": "Delete category", "Otwórz link": "Open link",
     "Kategoria narzędzi:": "Tool category:", "Narzędzia:": "Tools:",
     "Brak opisu.": "No description.", "Nazwa:": "Name:", "Link:": "Link:",
     "Opis:": "Description:", "Kategoria:": "Category:",
+    "Nowa kategoria": "New category", "Zmień nazwę kategorii": "Rename category",
     "Zmiana języka": "Language change",
     "Zmiana języka zostanie zastosowana po ponownym uruchomieniu OpenTrace.":
         "The language change will be applied after restarting OpenTrace.",
@@ -119,6 +142,23 @@ EN = {
     "Informacja sprzeczna": "Conflicting information", "Pytanie otwarte": "Open question",
     "przypuszczenie": "assumption", "prawdopodobne": "likely",
     "potwierdzone": "confirmed", "OK": "OK",
+    "Wysuń zasobnik narzędzi OSINT": "Open OSINT tool library",
+    "Schowaj zasobnik narzędzi OSINT": "Hide OSINT tool library",
+    "Wysuń panel analizy": "Open analysis panel",
+    "Schowaj panel analizy": "Hide analysis panel",
+    "Wysuń panel notatki": "Open note panel",
+    "Schowaj panel notatki": "Hide note panel",
+    "Dwuklik: edycja • Prawy przycisk: opcje":
+        "Double-click: edit • Right-click: options",
+    "Nazwę można zaznaczyć i skopiować.":
+        "The name can be selected and copied.",
+    "Opis można zaznaczyć i skopiować.":
+        "The description can be selected and copied.",
+    "Tekst można zaznaczyć i skopiować skrótem Ctrl+C. Kliknięcie linku otwiera domyślną przeglądarkę.":
+        "Text can be selected and copied with Ctrl+C. Clicking a link opens the default browser.",
+    "Możesz zaznaczać i kopiować tekst. Kliknięcie podświetlonego linku otwiera domyślną przeglądarkę systemową.":
+        "You can select and copy text. Clicking a highlighted link opens the system's default browser.",
+    "Powiązany rekord analityczny": "Linked analysis record",
 }
 
 _EN_REVERSE = {value: key for key, value in EN.items()}
@@ -144,6 +184,7 @@ def tr(text: str) -> str:
         ("Podgląd obrazu — ", "Image preview — "),
         ("Edytuj: ", "Edit: "),
         ("Dodaj: ", "Add: "),
+        ("UUID relacji: ", "Relationship UUID: "),
     ):
         if text.startswith(source):
             return target + tr(text[len(source):])

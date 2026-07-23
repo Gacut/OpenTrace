@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QGraphicsItem, QGraphicsObject, QGraphicsPathItem, QStyleOptionGraphicsItem,
 )
 
+from app.i18n import tr
 from app.models import BoardItemModel, ConnectionModel, ItemType
 
 class BaseNodeItem(QGraphicsObject):
@@ -32,7 +33,7 @@ class BaseNodeItem(QGraphicsObject):
             | QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
         )
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsFocusable)
-        self.setToolTip("Dwuklik: edycja • Prawy przycisk: opcje")
+        self.setToolTip(tr("Dwuklik: edycja • Prawy przycisk: opcje"))
         self._drag_start = QPointF()
         self._resize_handle: str | None = None
         self._resize_start_scene = QPointF()
@@ -289,7 +290,7 @@ class ConnectionItem(QGraphicsPathItem):
         if self.model.style == "dashed" or self.model.confidence == "przypuszczenie":
             pen.setStyle(Qt.PenStyle.DashLine)
         self.setPen(pen)
-        self.setToolTip(f"{self.model.relation_type}: {self.model.label}")
+        self.setToolTip(f"{tr(self.model.relation_type)}: {self.model.label}")
         if self.scene():
             self.scene().update(old_scene_rect)
             self.scene().update(
@@ -302,7 +303,7 @@ class ConnectionItem(QGraphicsPathItem):
         return self.path().pointAtPercent(.5)
 
     def label_text(self) -> str:
-        return self.model.label or self.model.relation_type
+        return self.model.label or tr(self.model.relation_type)
 
     def label_rect(self) -> QRectF:
         label = self.label_text()

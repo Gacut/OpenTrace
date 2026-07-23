@@ -1224,6 +1224,110 @@ def test_search_dialog_missing_english_strings_are_translated(qtbot):
     set_language("pl")
 
 
+def test_connection_dialog_translates_relation_title_and_choices(qtbot):
+    from PySide6.QtWidgets import QApplication
+    from app.i18n import combo_source_text, install_translation_filter, set_language
+
+    set_language("en")
+    install_translation_filter(QApplication.instance())
+    dialog = ConnectionDialog()
+    qtbot.addWidget(dialog)
+    dialog.show()
+    qtbot.wait(10)
+
+    choices = [
+        dialog.relation_type.itemText(index)
+        for index in range(dialog.relation_type.count())
+    ]
+    assert dialog.windowTitle() == "Relationship meaning"
+    assert "knows" in choices
+    assert "is connected to" in choices
+    assert "belongs to" in choices
+    assert "works for" in choices
+    assert "unknown relationship" in choices
+
+    dialog.relation_type.setCurrentText("belongs to")
+    assert combo_source_text(dialog.relation_type) == "należy do"
+    dialog.close()
+    set_language("pl")
+
+
+def test_remaining_note_tool_library_and_hover_texts_are_translated(qtbot, tmp_path):
+    from PySide6.QtWidgets import QApplication, QLabel, QPushButton
+    from app.i18n import install_translation_filter, set_language, tr
+    from app.models import BoardItemModel, ConnectionModel, ItemType
+    from app.graphics.items import ConnectionItem, NoteItem
+    from app.services import ToolLibrary
+    from app.ui.dialogs import ItemTextDialog
+    from app.ui.note_panel import NotePanel
+    from app.ui.tools_panel import ToolDialog, ToolsPanel
+
+    set_language("en")
+    install_translation_filter(QApplication.instance())
+
+    note_dialog = ItemTextDialog("Nowa notatka", tr("Nowa notatka"))
+    qtbot.addWidget(note_dialog)
+    note_dialog.show()
+    qtbot.wait(10)
+    assert note_dialog.windowTitle() == "New note"
+    assert note_dialog.heading.text() == "New note"
+    assert tr("Dodaj obraz") == "Add image"
+    assert tr("Nowa pinezka") == "New pin"
+
+    library = ToolLibrary(tmp_path / "tools.json")
+    tools_panel = ToolsPanel(library)
+    qtbot.addWidget(tools_panel)
+    tools_panel.show()
+    qtbot.wait(10)
+    assert tools_panel.category.itemText(0) == "Uncategorized"
+    assert "+ Category" in [
+        button.text() for button in tools_panel.findChildren(QPushButton)
+    ]
+
+    tool_dialog = ToolDialog(library)
+    qtbot.addWidget(tool_dialog)
+    tool_dialog.show()
+    qtbot.wait(10)
+    assert "Usage description:" in [
+        label.text() for label in tool_dialog.findChildren(QLabel)
+    ]
+
+    note_panel = NotePanel(lambda: None)
+    qtbot.addWidget(note_panel)
+    note_panel.show()
+    qtbot.wait(10)
+    assert any(
+        label.text().startswith("You can select and copy text.")
+        for label in note_panel.findChildren(QLabel)
+    )
+    assert note_panel.text.toolTip().startswith(
+        "Text can be selected and copied with Ctrl+C."
+    )
+
+    note_item = NoteItem(BoardItemModel(ItemType.NOTE, 0, 0))
+    assert note_item.toolTip() == "Double-click: edit • Right-click: options"
+    target_item = NoteItem(BoardItemModel(ItemType.NOTE, 300, 0))
+    connection_item = ConnectionItem(
+        ConnectionModel(
+            note_item.model.id, target_item.model.id,
+            relation_type="jest powiązany z",
+        ),
+        note_item,
+        target_item,
+    )
+    assert connection_item.label_text() == "is connected to"
+    connection_item.model.label = "Custom analyst label"
+    assert connection_item.label_text() == "Custom analyst label"
+    assert tr("Wysuń zasobnik narzędzi OSINT") == "Open OSINT tool library"
+    assert tr("Schowaj panel analizy") == "Hide analysis panel"
+
+    note_dialog.close()
+    tools_panel.close()
+    tool_dialog.close()
+    note_panel.close()
+    set_language("pl")
+
+
 def test_journal_titles_are_translated_only_for_display(qtbot, tmp_path):
     from app.i18n import set_language
     from app.ui.analysis_panel import AnalysisPanel

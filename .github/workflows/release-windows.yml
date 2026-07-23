@@ -66,7 +66,9 @@ jobs:
           $notes = @"
           ## OpenTrace $version
 
-          First public release of OpenTrace, an offline desktop workspace for organizing OSINT investigations.
+          This maintenance release completes English translations across relationship
+          dialogs and labels, note and image creation dialogs, OSINT tool controls,
+          note-panel guidance, and interface hover tooltips.
 
           ### Download
 

@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QTextEdit, QVBoxLayout, QWidget,
 )
 
+from app.i18n import tr
 from app.services import OsintTool, ToolLibrary
 
 
@@ -23,7 +24,7 @@ class ToolDialog(QDialog):
         self.description.setMaximumHeight(130)
         self.category = QComboBox()
         for category in library.categories:
-            self.category.addItem(category.name, category.id)
+            self.category.addItem(tr(category.name), category.id)
         if tool:
             index = self.category.findData(tool.category_id)
             self.category.setCurrentIndex(max(0, index))
@@ -114,7 +115,7 @@ class ToolsPanel(QWidget):
         self.category.blockSignals(True)
         self.category.clear()
         for category in self.library.categories:
-            self.category.addItem(category.name, category.id)
+            self.category.addItem(tr(category.name), category.id)
         index = self.category.findData(selected_category_id)
         self.category.setCurrentIndex(max(0, index))
         self.category.blockSignals(False)

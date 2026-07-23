@@ -63,7 +63,7 @@ class SearchDialog(QDialog):
         for entry in entries:
             item = QListWidgetItem(entry["label"])
             item.setData(Qt.ItemDataRole.UserRole, (entry["kind"], entry["id"]))
-            item.setToolTip(entry.get("tooltip", ""))
+            item.setToolTip(tr(entry.get("tooltip", "")))
             self.results.addItem(item)
         count = len(entries)
         if language() == "en":

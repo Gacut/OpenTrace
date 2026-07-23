@@ -46,7 +46,7 @@ On Linux, activate the environment with:
 source .venv/bin/activate
 ```
 
-The source code is designed to be cross-platform, but the downloadable 1.0.0
+The source code is designed to be cross-platform, but the downloadable 1.0.1
 binary release currently targets Windows x64.
 
 ## Tests

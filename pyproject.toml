@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "opentrace"
-version = "1.0.0"
+version = "1.0.1"
 description = "Offline OSINT investigation board"
 requires-python = ">=3.12"
 dependencies = ["PySide6==6.11.1"]

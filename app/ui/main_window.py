@@ -437,7 +437,7 @@ class MainWindow(QMainWindow):
         # Floating edge button: unlike a QToolBar it does not reserve a visible
         # strip beside the board while the tools dock is closed.
         self.tools_toggle_action = QAction("⚙", self)
-        self.tools_toggle_action.setToolTip("Wysuń zasobnik narzędzi OSINT")
+        self.tools_toggle_action.setToolTip(tr("Wysuń zasobnik narzędzi OSINT"))
         self.tools_toggle_action.triggered.connect(self.toggle_tools_panel)
         self.tools_toggle_button = QToolButton(self)
         self.tools_toggle_button.setDefaultAction(self.tools_toggle_action)
@@ -505,19 +505,19 @@ class MainWindow(QMainWindow):
 
     def _build_right_panel_buttons(self):
         self.fit_toggle_action = QAction("⛶", self)
-        self.fit_toggle_action.setToolTip("Dopasuj wszystko")
+        self.fit_toggle_action.setToolTip(tr("Dopasuj wszystko"))
         self.fit_toggle_action.triggered.connect(lambda: self.fit_action.trigger())
         self.fit_toggle_button = QToolButton(self)
         self.fit_toggle_button.setDefaultAction(self.fit_toggle_action)
 
         self.search_toggle_action = QAction("🔍", self)
-        self.search_toggle_action.setToolTip("Szukaj w sprawie")
+        self.search_toggle_action.setToolTip(tr("Szukaj w sprawie"))
         self.search_toggle_action.triggered.connect(lambda: self.search())
         self.search_toggle_button = QToolButton(self)
         self.search_toggle_button.setDefaultAction(self.search_toggle_action)
 
         self.analysis_toggle_action = QAction("📊", self)
-        self.analysis_toggle_action.setToolTip("Wysuń panel analizy")
+        self.analysis_toggle_action.setToolTip(tr("Wysuń panel analizy"))
         self.analysis_toggle_action.triggered.connect(
             lambda: self._toggle_right_dock(self.analysis_dock)
         )
@@ -525,7 +525,7 @@ class MainWindow(QMainWindow):
         self.analysis_toggle_button.setDefaultAction(self.analysis_toggle_action)
 
         self.note_toggle_action = QAction("📝", self)
-        self.note_toggle_action.setToolTip("Wysuń panel notatki")
+        self.note_toggle_action.setToolTip(tr("Wysuń panel notatki"))
         self.note_toggle_action.triggered.connect(
             lambda: self._toggle_right_dock(self.note_dock)
         )
@@ -578,11 +578,11 @@ class MainWindow(QMainWindow):
             )
         if kind == "analysis":
             self.analysis_toggle_action.setToolTip(
-                "Schowaj panel analizy" if visible else "Wysuń panel analizy"
+                tr("Schowaj panel analizy" if visible else "Wysuń panel analizy")
             )
         else:
             self.note_toggle_action.setToolTip(
-                "Schowaj panel notatki" if visible else "Wysuń panel notatki"
+                tr("Schowaj panel notatki" if visible else "Wysuń panel notatki")
             )
         self._schedule_edge_buttons()
 
@@ -643,8 +643,8 @@ class MainWindow(QMainWindow):
 
     def update_tools_toggle(self, visible: bool):
         self.tools_toggle_action.setToolTip(
-            "Schowaj zasobnik narzędzi OSINT" if visible
-            else "Wysuń zasobnik narzędzi OSINT"
+            tr("Schowaj zasobnik narzędzi OSINT" if visible
+               else "Wysuń zasobnik narzędzi OSINT")
         )
         self._schedule_edge_buttons()
 
@@ -871,7 +871,7 @@ class MainWindow(QMainWindow):
     def add_note(self, pos):
         if not self.can_edit():
             return
-        dialog = ItemTextDialog("Nowa notatka", "Nowa notatka", parent=self)
+        dialog = ItemTextDialog("Nowa notatka", tr("Nowa notatka"), parent=self)
         if dialog.exec():
             self.controller.add_note(pos, dialog.heading.text(), dialog.body.toPlainText())
 

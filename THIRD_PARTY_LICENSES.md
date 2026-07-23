@@ -1,6 +1,6 @@
 # Third-party licenses
 
-OpenTrace 1.0.0 is licensed under the MIT License. Its Windows distribution
+OpenTrace 1.0.1 is licensed under the MIT License. Its Windows distribution
 also contains the following third-party components.
 
 ## Qt for Python

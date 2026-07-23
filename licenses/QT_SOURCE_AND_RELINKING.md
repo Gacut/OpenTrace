@@ -1,6 +1,6 @@
 # Qt/PySide6 source and relinking information
 
-OpenTrace 1.0.0 uses the following unmodified LGPL components:
+OpenTrace 1.0.1 uses the following unmodified LGPL components:
 
 - Qt 6.11.1
 - PySide6 6.11.1
@@ -17,7 +17,7 @@ The corresponding upstream source archives are:
 - Qt for Python, including PySide6 and Shiboken6:
   `pyside-setup-everywhere-src-6.11.1.tar.xz`
 
-For at least three years after an OpenTrace 1.0.0 binary was distributed,
+For at least three years after an OpenTrace 1.0.1 binary was distributed,
 any recipient may request a copy of the corresponding source code by opening
 an issue at:
 
