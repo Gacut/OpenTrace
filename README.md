@@ -23,6 +23,8 @@ accounts, cloud synchronization, telemetry, or mandatory online services.
 - PNG and structured JSON export
 - Polish and English user interface
 - Fully offline operation with no telemetry
+- 
+<img width="780" height="449" alt="opentraceprogram" src="https://github.com/user-attachments/assets/951f53fe-7f61-4094-9dc0-1934bedea400" />
 
 ## Requirements
 
