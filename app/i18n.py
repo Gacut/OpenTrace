@@ -159,6 +159,17 @@ EN = {
     "Możesz zaznaczać i kopiować tekst. Kliknięcie podświetlonego linku otwiera domyślną przeglądarkę systemową.":
         "You can select and copy text. Clicking a highlighted link opens the system's default browser.",
     "Powiązany rekord analityczny": "Linked analysis record",
+    "Załączniki:": "Attachments:", "Dodaj pliki…": "Add files…",
+    "Usuń z listy": "Remove from list",
+    "Wybierz załączniki": "Select attachments",
+    "Wszystkie pliki (*)": "All files (*)",
+    "Dodawanie załączników": "Adding attachments",
+    "Otwórz załącznik": "Show attachment",
+    "Załącznik": "Attachment", "oczekuje na zapis": "pending save",
+    "Ścieżka załącznika znajduje się poza katalogiem sprawy.":
+        "The attachment path is outside the case directory.",
+    "Plik załącznika nie istnieje w katalogu sprawy.":
+        "The attachment file does not exist in the case directory.",
 }
 
 _EN_REVERSE = {value: key for key, value in EN.items()}
@@ -203,6 +214,7 @@ JOURNAL_TITLES_EN = {
     "Edytowano nazwę lub opis zdjęcia": "Edited image name or description",
     "Zmieniono właściwości OSINT zdjęcia": "Changed image OSINT properties",
     "Wyeksportowano dane strukturalne JSON": "Exported structured JSON data",
+    "Dodano załączniki do notatki": "Added attachments to note",
 }
 
 JOURNAL_PREFIXES_EN = (

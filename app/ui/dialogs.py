@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QColorDialog, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel,
-    QLineEdit, QPushButton, QTabWidget, QTextEdit, QVBoxLayout, QWidget,
+    QColorDialog, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout,
+    QHBoxLayout, QLabel, QLineEdit, QListWidget, QPushButton, QTabWidget,
+    QTextEdit, QVBoxLayout, QWidget,
 )
-from app.i18n import combo_source_text
+from app.i18n import combo_source_text, tr
 
 ITEM_STATUSES = [
     "Nowe", "Do sprawdzenia", "Potwierdzone", "Niepotwierdzone",
@@ -56,15 +59,49 @@ class ItemTextDialog(QDialog):
         self.setWindowTitle(title)
         self.heading = QLineEdit(heading)
         self.body = QTextEdit(body)
+        self.attachment_sources: list[Path] = []
+        self.attachments = QListWidget()
+        self.attachments.setMaximumHeight(100)
+        self.add_attachment_button = QPushButton("Dodaj pliki…")
+        self.remove_attachment_button = QPushButton("Usuń z listy")
+        self.add_attachment_button.clicked.connect(self.choose_attachments)
+        self.remove_attachment_button.clicked.connect(self.remove_selected_attachment)
+        attachment_buttons = QHBoxLayout()
+        attachment_buttons.addWidget(self.add_attachment_button)
+        attachment_buttons.addWidget(self.remove_attachment_button)
         form = QFormLayout()
         form.addRow("Tytuł / nazwa:", self.heading)
         form.addRow("Treść / opis:", self.body)
+        form.addRow("Załączniki:", self.attachments)
+        form.addRow("", attachment_buttons)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout = QVBoxLayout(self)
         layout.addLayout(form)
         layout.addWidget(buttons)
+
+    def choose_attachments(self):
+        filenames, _ = QFileDialog.getOpenFileNames(
+            self, tr("Wybierz załączniki"), "", tr("Wszystkie pliki (*)")
+        )
+        known = {source.resolve() for source in self.attachment_sources}
+        for filename in filenames:
+            source = Path(filename)
+            resolved = source.resolve()
+            if resolved in known:
+                continue
+            self.attachment_sources.append(source)
+            self.attachments.addItem(source.name)
+            self.attachments.item(self.attachments.count() - 1).setToolTip(str(source))
+            known.add(resolved)
+
+    def remove_selected_attachment(self):
+        row = self.attachments.currentRow()
+        if row < 0:
+            return
+        self.attachments.takeItem(row)
+        self.attachment_sources.pop(row)
 
 
 class PropertiesDialog(QDialog):

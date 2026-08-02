@@ -69,6 +69,7 @@ class CaseManager:
         paths.manifest.write_text(json.dumps({
             "schema_version": 4, "case_id": metadata.id, "name": metadata.name,
             "database": "case.sqlite3", "media": "media",
+            "attachments": "attachments",
         }, ensure_ascii=False, indent=2), encoding="utf-8")
 
     @staticmethod
@@ -76,6 +77,22 @@ class CaseManager:
         suffix = source.suffix.lower()
         target = paths.media / f"{uuid4().hex}{suffix}"
         shutil.copy2(source, target)
+        return target.relative_to(paths.root)
+
+    @staticmethod
+    def import_attachment(paths: CasePaths, source: Path, note_id: str) -> Path:
+        source = Path(source)
+        if not source.is_file():
+            raise FileNotFoundError(f"Nie znaleziono pliku: {source}")
+        note_directory = paths.attachments / note_id
+        note_directory.mkdir(parents=True, exist_ok=True)
+        target = note_directory / f"{uuid4().hex}{source.suffix.lower()}"
+        temporary = target.with_name(f".{target.name}.tmp")
+        try:
+            shutil.copy2(source, temporary)
+            temporary.replace(target)
+        finally:
+            temporary.unlink(missing_ok=True)
         return target.relative_to(paths.root)
 
     @staticmethod

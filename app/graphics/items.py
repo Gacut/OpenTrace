@@ -173,6 +173,9 @@ class BaseNodeItem(QGraphicsObject):
 
 
 class NoteItem(BaseNodeItem):
+    def has_attachments(self) -> bool:
+        return bool(self.model.payload.get("attachments"))
+
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         bg = QColor(self.model.payload.get("color", "#facc15"))
         painter.setPen(QPen(QColor("#ffffff") if self.isSelected() else bg.darker(150), 3 if self.isSelected() else 1))
@@ -191,6 +194,16 @@ class NoteItem(BaseNodeItem):
         painter.setPen(QColor(self.model.payload.get("body_color", fallback_text_color)))
         painter.drawText(QRectF(12, 40, self.model.width - 24, self.model.height - 50),
                          Qt.TextFlag.TextWordWrap, text)
+        if self.has_attachments():
+            attachment_font = QFont()
+            attachment_font.setPointSize(13)
+            painter.setFont(attachment_font)
+            painter.setPen(QColor(self.model.payload.get("title_color", fallback_text_color)))
+            painter.drawText(
+                QRectF(self.model.width - 36, self.model.height - 32, 26, 22),
+                Qt.AlignmentFlag.AlignCenter,
+                "🔗",
+            )
         self.paint_resize_handles(painter)
 
     def mouseDoubleClickEvent(self, event):

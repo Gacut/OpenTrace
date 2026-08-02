@@ -44,6 +44,8 @@ QToolTip { background: #f8fafc; color: #111827; }
 class AnimatedWelcomeWidget(QWidget):
     """A subtle, drifting network used only behind the welcome screen."""
 
+    ACCENT_MARGIN = 0.04
+
     def __init__(self, accent_index: int, animation_enabled: bool = True, parent=None):
         super().__init__(parent)
         self.animation_phase = 0.0
@@ -65,6 +67,9 @@ class AnimatedWelcomeWidget(QWidget):
         self._particles[1][:2] = [1.1, 0.7]
         self._particles[2][:2] = [0.35, -0.1]
         self._particles[3][:2] = [0.75, 1.1]
+        accent = self._particles[self.accent_index]
+        accent[0] = min(1.0 - self.ACCENT_MARGIN, max(self.ACCENT_MARGIN, accent[0]))
+        accent[1] = min(1.0 - self.ACCENT_MARGIN, max(self.ACCENT_MARGIN, accent[1]))
         self.animation_timer = QTimer(self)
         self.animation_timer.setInterval(33)
         self.animation_timer.timeout.connect(self._advance_animation)
@@ -81,9 +86,20 @@ class AnimatedWelcomeWidget(QWidget):
 
     def _advance_animation(self):
         self.animation_phase += 0.018
-        for particle in self._particles:
+        for index, particle in enumerate(self._particles):
             particle[0] += particle[2]
             particle[1] += particle[3]
+            if index == self.accent_index:
+                lower, upper = self.ACCENT_MARGIN, 1.0 - self.ACCENT_MARGIN
+                if particle[0] < lower:
+                    particle[0], particle[2] = lower, abs(particle[2])
+                elif particle[0] > upper:
+                    particle[0], particle[2] = upper, -abs(particle[2])
+                if particle[1] < lower:
+                    particle[1], particle[3] = lower, abs(particle[3])
+                elif particle[1] > upper:
+                    particle[1], particle[3] = upper, -abs(particle[3])
+                continue
             if particle[0] < -0.12 or particle[0] > 1.12:
                 particle[2] *= -1
             if particle[1] < -0.12 or particle[1] > 1.12:
@@ -387,12 +403,17 @@ class MainWindow(QMainWindow):
         self.app_settings.save()
         for action in self.language_group.actions():
             action.setChecked(action.data() == language_code)
-        if hasattr(self, "welcome_language_combo"):
-            self.welcome_language_combo.blockSignals(True)
-            self.welcome_language_combo.setCurrentIndex(
-                max(0, self.welcome_language_combo.findData(language_code))
-            )
-            self.welcome_language_combo.blockSignals(False)
+        welcome_combo = getattr(self, "welcome_language_combo", None)
+        if welcome_combo is not None:
+            try:
+                welcome_combo.blockSignals(True)
+                welcome_combo.setCurrentIndex(max(0, welcome_combo.findData(language_code)))
+                welcome_combo.blockSignals(False)
+            except RuntimeError:
+                # Qt destroys the welcome page when the board becomes the central widget,
+                # but its Python wrapper can remain reachable until garbage collection.
+                self.welcome_language_combo = None
+                self.welcome_language_label = None
         if language_code == "en":
             title = "Language change"
             message = "The language change will be applied after restarting OpenTrace."
@@ -714,6 +735,8 @@ class MainWindow(QMainWindow):
         self.edit_menu.insertAction(first_edit_action, self.redo_action)
         self.edit_menu.insertSeparator(first_edit_action)
         self.setCentralWidget(self.view)
+        self.welcome_language_combo = None
+        self.welcome_language_label = None
         self._set_edge_buttons_enabled(True)
         self.analysis_panel.refresh()
         self._restore_camera()
@@ -873,7 +896,13 @@ class MainWindow(QMainWindow):
             return
         dialog = ItemTextDialog("Nowa notatka", tr("Nowa notatka"), parent=self)
         if dialog.exec():
-            self.controller.add_note(pos, dialog.heading.text(), dialog.body.toPlainText())
+            try:
+                self.controller.add_note(
+                    pos, dialog.heading.text(), dialog.body.toPlainText(),
+                    dialog.attachment_sources,
+                )
+            except Exception as exc:
+                QMessageBox.critical(self, tr("Dodawanie załączników"), str(exc))
 
     def add_pin(self, pos):
         if not self.can_edit():

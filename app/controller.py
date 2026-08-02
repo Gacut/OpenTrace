@@ -88,11 +88,65 @@ class CaseController(QObject):
         self._closed = True
         self.database.close()
 
-    def add_note(self, pos: QPointF, title="Nowa notatka", text=""):
+    def add_note(self, pos: QPointF, title="Nowa notatka", text="",
+                 attachments: list[Path] | None = None) -> BoardItemModel:
         model = BoardItemModel(ItemType.NOTE, pos.x(), pos.y(),
                                payload={"title": title, "text": text, "color": "#facc15"})
+        if attachments:
+            model.payload["attachments"] = self._import_note_attachments(
+                model.id, attachments
+            )
         self.undo_stack.push(AddItemCommand(self, model))
         self.log_event("Utworzono notatkę", "element", item_ids=[model.id])
+        if attachments:
+            self.log_event(
+                "Dodano załączniki do notatki", "import",
+                body="\n".join(Path(source).name for source in attachments),
+                item_ids=[model.id],
+            )
+        return model
+
+    def _import_note_attachments(
+        self, note_id: str, sources: list[Path]
+    ) -> list[dict]:
+        imported: list[dict] = []
+        try:
+            for value in sources:
+                source = Path(value)
+                relative = CaseManager.import_attachment(self.paths, source, note_id)
+                target = self.paths.root / relative
+                imported.append({
+                    "id": relative.stem,
+                    "path": relative.as_posix(),
+                    "filename": source.name,
+                    "size_bytes": target.stat().st_size,
+                    "sha256": sha256_file(target),
+                    "added_at": now_iso(),
+                })
+        except Exception:
+            for attachment in imported:
+                target = self.paths.root / attachment["path"]
+                target.unlink(missing_ok=True)
+            note_directory = self.paths.attachments / note_id
+            if note_directory.exists() and not any(note_directory.iterdir()):
+                note_directory.rmdir()
+            raise
+        return imported
+
+    def add_note_attachments(self, item_id: str, sources: list[Path]) -> list[dict]:
+        item = self.scene.nodes.get(item_id)
+        if not item or item.model.type != ItemType.NOTE:
+            raise ValueError("Nie znaleziono notatki.")
+        imported = self._import_note_attachments(item_id, sources)
+        item.model.payload.setdefault("attachments", []).extend(imported)
+        self.mark_dirty()
+        if imported:
+            self.log_event(
+                "Dodano załączniki do notatki", "import",
+                body="\n".join(value["filename"] for value in imported),
+                item_ids=[item_id],
+            )
+        return imported
 
     def add_pin(self, pos: QPointF, name="Nowa pinezka"):
         model = BoardItemModel(ItemType.PIN, pos.x(), pos.y(), 140, 110,

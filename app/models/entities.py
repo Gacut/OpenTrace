@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -41,7 +42,7 @@ class BoardItemModel:
             type=self.type, x=self.x + offset, y=self.y + offset,
             width=self.width, height=self.height, rotation=self.rotation,
             z=self.z + 1, status=self.status, tags=list(self.tags),
-            locked=self.locked, payload=dict(self.payload),
+            locked=self.locked, payload=deepcopy(self.payload),
         )
 
     def to_dict(self) -> dict[str, Any]:

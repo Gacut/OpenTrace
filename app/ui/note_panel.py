@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import re
+import sys
+from pathlib import Path
 
-from PySide6.QtCore import Signal
-from PySide6.QtGui import QColor, QTextCharFormat, QTextCursor
+from PySide6.QtCore import QProcess, Qt, QUrl, Signal
+from PySide6.QtGui import QColor, QDesktopServices, QTextCharFormat, QTextCursor
 from PySide6.QtWidgets import (
-    QComboBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QTabWidget, QTextBrowser, QTextEdit, QVBoxLayout, QWidget,
+    QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
+    QListWidget, QListWidgetItem, QMessageBox, QPushButton, QTabWidget,
+    QTextBrowser, QTextEdit, QVBoxLayout, QWidget,
 )
 
 from app.ui.dialogs import CLASSIFICATIONS, ITEM_STATUSES
@@ -24,6 +27,7 @@ class NotePanel(QWidget):
         self.item_id: str | None = None
         self.original_title = ""
         self.original_text = ""
+        self.pending_attachment_sources: list[Path] = []
 
         self.heading = QLabel("Nie wybrano notatki")
         self.heading.setWordWrap(True)
@@ -64,11 +68,22 @@ class NotePanel(QWidget):
         hint.setWordWrap(True)
         hint.setStyleSheet("color: #94a3b8; font-size: 9pt;")
 
+        self.attachments_label = QLabel("Załączniki:")
+        self.attachments = QListWidget()
+        self.attachments.setMaximumHeight(110)
+        self.attachments.itemClicked.connect(self.open_attachment)
+        self.add_attachment_button = QPushButton("Dodaj pliki…")
+        self.add_attachment_button.clicked.connect(self.choose_attachments)
+        self.add_attachment_button.hide()
+
         note_page = QWidget()
         note_layout = QVBoxLayout(note_page)
         note_layout.addWidget(self.heading)
         note_layout.addWidget(self.title_edit)
         note_layout.addWidget(self.text, 1)
+        note_layout.addWidget(self.attachments_label)
+        note_layout.addWidget(self.attachments)
+        note_layout.addWidget(self.add_attachment_button)
         note_layout.addWidget(hint)
         note_layout.addLayout(buttons)
 
@@ -149,6 +164,8 @@ class NotePanel(QWidget):
         self.heading.setText(self.original_title)
         self.title_edit.setText(self.original_title)
         self.text.setPlainText(self.original_text)
+        self.pending_attachment_sources = []
+        self.refresh_attachments()
         self.highlight_links()
         self.set_editing(False)
         self.cancel_property_edit()
@@ -166,6 +183,7 @@ class NotePanel(QWidget):
         self.edit_button.setVisible(not editing)
         self.save_button.setVisible(editing)
         self.cancel_button.setVisible(editing)
+        self.add_attachment_button.setVisible(editing)
         if editing:
             self.text.setFocus()
         else:
@@ -180,6 +198,8 @@ class NotePanel(QWidget):
         self.original_text = item.model.payload.get("text", "")
         self.title_edit.setText(self.original_title)
         self.text.setPlainText(self.original_text)
+        self.pending_attachment_sources = []
+        self.refresh_attachments()
         self.set_editing(True)
 
     def save(self):
@@ -189,6 +209,15 @@ class NotePanel(QWidget):
             return
         title = self.title_edit.text().strip() or "Notatka"
         body = self.text.toPlainText()
+        if self.pending_attachment_sources:
+            try:
+                controller.add_note_attachments(
+                    item.model.id, self.pending_attachment_sources
+                )
+            except Exception as exc:
+                QMessageBox.critical(self, tr("Dodawanie załączników"), str(exc))
+                return
+            self.pending_attachment_sources = []
         item.model.payload["title"] = title
         item.model.payload["text"] = body
         item.update()
@@ -196,6 +225,7 @@ class NotePanel(QWidget):
         controller.log_event("Edytowano notatkę", "element", item_ids=[item.model.id])
         self.original_title, self.original_text = title, body
         self.heading.setText(title)
+        self.refresh_attachments()
         self.set_editing(False)
         self.note_saved.emit(item.model.id)
 
@@ -204,7 +234,72 @@ class NotePanel(QWidget):
             self.heading.setText(self.original_title)
             self.title_edit.setText(self.original_title)
             self.text.setPlainText(self.original_text)
+        self.pending_attachment_sources = []
+        self.refresh_attachments()
         self.set_editing(False)
+
+    def choose_attachments(self):
+        filenames, _ = QFileDialog.getOpenFileNames(
+            self, tr("Wybierz załączniki"), "", tr("Wszystkie pliki (*)")
+        )
+        known = {source.resolve() for source in self.pending_attachment_sources}
+        for filename in filenames:
+            source = Path(filename)
+            resolved = source.resolve()
+            if resolved not in known:
+                self.pending_attachment_sources.append(source)
+                known.add(resolved)
+        self.refresh_attachments()
+
+    def refresh_attachments(self):
+        self.attachments.clear()
+        item = self.current_item()
+        if item:
+            for attachment in item.model.payload.get("attachments", []):
+                entry = QListWidgetItem(attachment.get("filename", "Załącznik"))
+                entry.setData(Qt.ItemDataRole.UserRole, attachment.get("path", ""))
+                size = attachment.get("size_bytes")
+                entry.setToolTip(
+                    f"{attachment.get('path', '')}"
+                    + (f"\n{size} B" if size is not None else "")
+                )
+                self.attachments.addItem(entry)
+        for source in self.pending_attachment_sources:
+            entry = QListWidgetItem(
+                f"{source.name} ({tr('oczekuje na zapis')})"
+            )
+            entry.setToolTip(str(source))
+            self.attachments.addItem(entry)
+
+    def open_attachment(self, entry: QListWidgetItem):
+        relative_value = entry.data(Qt.ItemDataRole.UserRole)
+        controller = self.controller_getter()
+        if not relative_value or not controller:
+            return
+        case_root = controller.paths.root.resolve()
+        target = (case_root / Path(relative_value)).resolve()
+        try:
+            target.relative_to(case_root)
+        except ValueError:
+            QMessageBox.warning(
+                self, tr("Otwórz załącznik"),
+                tr("Ścieżka załącznika znajduje się poza katalogiem sprawy."),
+            )
+            return
+        if not target.is_file():
+            QMessageBox.warning(
+                self, tr("Otwórz załącznik"),
+                tr("Plik załącznika nie istnieje w katalogu sprawy."),
+            )
+            return
+        self._reveal_attachment(target)
+
+    @staticmethod
+    def _reveal_attachment(path: Path):
+        if sys.platform == "win32":
+            QProcess.startDetached("explorer.exe", ["/select,", str(path)])
+        else:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(path.parent)))
 
     def copy(self):
         self.text.copy()

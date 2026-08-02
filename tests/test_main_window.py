@@ -63,6 +63,25 @@ def test_welcome_screen_buttons_use_new_and_open_case_actions(qtbot, tmp_path, m
     window.close()
 
 
+def test_welcome_accent_point_stays_inside_visible_area(qtbot):
+    from app.ui.main_window import AnimatedWelcomeWidget
+
+    for accent_index in (0, 1, 2, 3, 17, 62):
+        welcome = AnimatedWelcomeWidget(accent_index)
+        qtbot.addWidget(welcome)
+        welcome.animation_timer.stop()
+        accent = welcome._particles[accent_index]
+        assert welcome.ACCENT_MARGIN <= accent[0] <= 1.0 - welcome.ACCENT_MARGIN
+        assert welcome.ACCENT_MARGIN <= accent[1] <= 1.0 - welcome.ACCENT_MARGIN
+
+        accent[:4] = [-0.1, 1.1, -0.001, 0.001]
+        welcome._advance_animation()
+        assert welcome.ACCENT_MARGIN <= accent[0] <= 1.0 - welcome.ACCENT_MARGIN
+        assert welcome.ACCENT_MARGIN <= accent[1] <= 1.0 - welcome.ACCENT_MARGIN
+        assert accent[2] >= 0
+        assert accent[3] <= 0
+
+
 def test_live_search_lists_multiple_occurrences_and_stays_open_on_navigation(qtbot, tmp_path):
     paths, database, metadata = CaseManager.create(tmp_path / "case", "Wyszukiwanie")
     controller = CaseController(paths, database, metadata)
@@ -169,6 +188,84 @@ def test_links_are_highlighted_as_copyable_text_in_note_panel(qtbot, tmp_path):
     assert window.note_panel.text.isReadOnly()
     assert not window.note_panel.text.acceptRichText()
     window.close()
+
+
+def test_note_attachments_are_copied_persisted_and_revealed(
+    qtbot, tmp_path, monkeypatch
+):
+    from PySide6.QtWidgets import QFileDialog
+
+    paths, database, metadata = CaseManager.create(tmp_path / "case", "Załączniki")
+    controller = CaseController(paths, database, metadata)
+    controller.add_note(QPointF(0, 0), "Notatka", "Treść")
+    note = next(iter(controller.scene.nodes.values()))
+    source = tmp_path / "materiał źródłowy.zip"
+    source.write_bytes(b"example attachment")
+
+    window = MainWindow()
+    qtbot.addWidget(window)
+    window._set_controller(controller)
+    window.note_panel.show_note(note.model.id)
+    window.note_panel.begin_edit()
+    monkeypatch.setattr(
+        QFileDialog, "getOpenFileNames",
+        lambda *_args, **_kwargs: ([str(source)], "Wszystkie pliki (*)"),
+    )
+    window.note_panel.choose_attachments()
+    assert len(window.note_panel.pending_attachment_sources) == 1
+    assert "materiał źródłowy.zip" in window.note_panel.attachments.item(0).text()
+
+    window.note_panel.save()
+    attachment = note.model.payload["attachments"][0]
+    copied = (paths.root / attachment["path"]).resolve()
+    assert source.is_file()
+    assert copied.is_file()
+    assert copied.read_bytes() == source.read_bytes()
+    assert copied.is_relative_to(paths.attachments.resolve())
+    assert attachment["filename"] == source.name
+    assert attachment["size_bytes"] == source.stat().st_size
+    assert len(attachment["sha256"]) == 64
+    assert window.note_panel.attachments.count() == 1
+
+    revealed = []
+    monkeypatch.setattr(
+        window.note_panel, "_reveal_attachment", lambda path: revealed.append(path)
+    )
+    entry = window.note_panel.attachments.item(0)
+    window.note_panel.attachments.itemClicked.emit(entry)
+    assert revealed == [copied]
+
+    controller.save()
+    window.close()
+    reopened_paths, reopened_database, reopened_metadata = CaseManager.open(paths.root)
+    reopened = CaseController(reopened_paths, reopened_database, reopened_metadata)
+    loaded_note = reopened.scene.nodes[note.model.id].model
+    assert loaded_note.payload["attachments"][0]["filename"] == source.name
+    assert (reopened_paths.root / loaded_note.payload["attachments"][0]["path"]).is_file()
+    reopened.close()
+
+
+def test_new_note_dialog_collects_and_removes_attachments(qtbot, tmp_path, monkeypatch):
+    from PySide6.QtWidgets import QFileDialog
+    from app.ui.dialogs import ItemTextDialog
+
+    first = tmp_path / "first.txt"
+    second = tmp_path / "archive.zip"
+    first.write_text("one", encoding="utf-8")
+    second.write_bytes(b"two")
+    dialog = ItemTextDialog("Nowa notatka", "Nowa notatka")
+    qtbot.addWidget(dialog)
+    monkeypatch.setattr(
+        QFileDialog, "getOpenFileNames",
+        lambda *_args, **_kwargs: ([str(first), str(second), str(first)], ""),
+    )
+    dialog.choose_attachments()
+    assert dialog.attachment_sources == [first, second]
+    assert dialog.attachments.count() == 2
+    dialog.attachments.setCurrentRow(0)
+    dialog.remove_selected_attachment()
+    assert dialog.attachment_sources == [second]
+    assert dialog.attachments.count() == 1
 
 
 def test_note_osint_properties_open_read_only_tab_then_edit_inline(qtbot, tmp_path):
@@ -1168,6 +1265,33 @@ def test_language_choice_persists_and_applies_after_restart(qtbot, tmp_path, mon
     set_language("pl")
 
 
+def test_language_change_with_open_case_still_shows_restart_message(
+    qtbot, tmp_path, monkeypatch
+):
+    from PySide6.QtWidgets import QMessageBox
+
+    monkeypatch.setenv("OSINT_BOARD_CONFIG_DIR", str(tmp_path / "config"))
+    messages = []
+    monkeypatch.setattr(
+        QMessageBox, "information",
+        lambda _parent, title, message: messages.append((title, message)),
+    )
+    window = MainWindow()
+    qtbot.addWidget(window)
+    paths, database, metadata = CaseManager.create(tmp_path / "language-case", "Language")
+    window._set_controller(CaseController(paths, database, metadata))
+    qtbot.wait(20)
+
+    window.change_language("en")
+
+    assert window.app_settings.language == "en"
+    assert messages == [(
+        "Language change",
+        "The language change will be applied after restarting OpenTrace.",
+    )]
+    window.close()
+
+
 def test_home_language_selector_uses_target_language_for_restart_message(
     qtbot, tmp_path, monkeypatch
 ):
@@ -1250,6 +1374,17 @@ def test_connection_dialog_translates_relation_title_and_choices(qtbot):
     assert combo_source_text(dialog.relation_type) == "należy do"
     dialog.close()
     set_language("pl")
+
+
+def test_note_item_reports_attachment_indicator_state():
+    from app.graphics.items import NoteItem
+    from app.models import BoardItemModel, ItemType
+
+    note_item = NoteItem(BoardItemModel(ItemType.NOTE, 0, 0))
+    assert not note_item.has_attachments()
+
+    note_item.model.payload["attachments"] = [{"path": "attachments/example.zip"}]
+    assert note_item.has_attachments()
 
 
 def test_remaining_note_tool_library_and_hover_texts_are_translated(qtbot, tmp_path):

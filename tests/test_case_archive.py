@@ -9,6 +9,11 @@ def test_case_zip_round_trip(tmp_path):
     source = tmp_path / "Źródłowa sprawa"
     paths, database, metadata = CaseManager.create(source, "Test archiwum")
     (paths.media / "dowod.txt").write_text("materiał", encoding="utf-8")
+    attachment_source = tmp_path / "załącznik.zip"
+    attachment_source.write_bytes(b"portable attachment")
+    attachment_relative = CaseManager.import_attachment(
+        paths, attachment_source, "note-id"
+    )
     database.close()
 
     archive = tmp_path / "Kopia sprawy.zip"
@@ -19,6 +24,7 @@ def test_case_zip_round_trip(tmp_path):
     opened_paths, opened_database, opened_metadata = CaseManager.open(target)
     assert opened_metadata.name == metadata.name
     assert (opened_paths.media / "dowod.txt").read_text(encoding="utf-8") == "materiał"
+    assert (opened_paths.root / attachment_relative).read_bytes() == b"portable attachment"
     opened_database.close()
 
 
