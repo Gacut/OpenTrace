@@ -1,5 +1,6 @@
 import gc
 
+import pytest
 from PySide6.QtCore import QPointF, Qt
 
 from app.controller import CaseController
@@ -1385,6 +1386,46 @@ def test_note_item_reports_attachment_indicator_state():
 
     note_item.model.payload["attachments"] = [{"path": "attachments/example.zip"}]
     assert note_item.has_attachments()
+
+
+def test_note_font_scales_proportionally_with_board_size():
+    from app.graphics.items import NoteItem
+    from app.models import BoardItemModel, ItemType
+
+    note_item = NoteItem(BoardItemModel(ItemType.NOTE, 0, 0, 220, 150))
+    assert note_item.font_scale() == 1.0
+
+    note_item.apply_geometry(0, 0, 440, 300)
+    assert note_item.font_scale() == 2.0
+
+    note_item.apply_geometry(0, 0, 440, 150)
+    assert note_item.font_scale() == pytest.approx(2 ** 0.5)
+
+    note_item.apply_geometry(0, 0, 80, 60)
+    assert note_item.font_scale() == note_item.MIN_FONT_SCALE
+
+    note_item.apply_geometry(0, 0, 2200, 1500)
+    assert note_item.font_scale() == note_item.MAX_FONT_SCALE
+
+
+def test_note_font_shrinks_until_all_content_fits(qtbot):
+    from app.graphics.items import NoteItem
+    from app.models import BoardItemModel, ItemType
+
+    model = BoardItemModel(
+        ItemType.NOTE, 0, 0, 220, 150,
+        payload={"title": "Długa notatka", "text": "Treść dowodowa " * 45},
+    )
+    note_item = NoteItem(model)
+    small_size = note_item.fitted_font_size()
+
+    assert small_size < 11.0 * note_item.font_scale()
+    assert note_item.text_fits(small_size)
+
+    note_item.apply_geometry(0, 0, 660, 450)
+    large_size = note_item.fitted_font_size()
+    assert large_size > small_size
+    assert note_item.text_fits(large_size)
 
 
 def test_remaining_note_tool_library_and_hover_texts_are_translated(qtbot, tmp_path):

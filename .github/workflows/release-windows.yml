@@ -66,13 +66,12 @@ jobs:
           $notes = @"
           ## OpenTrace $version
 
-          This release adds file attachments to notes. Attached files are copied into
-          the investigation folder, remain available while editing a note, and are
-          preserved when a case is packed into a ZIP archive. Notes containing files
-          now display a link indicator directly on the board.
+          This patch improves note readability on the investigation board. Note text
+          now scales proportionally with the note size and automatically shrinks when
+          necessary so the complete title and body remain visible without clipping.
 
-          It also keeps the red accent point visible on the welcome screen and fixes
-          language switching while an investigation is open.
+          Long words are wrapped safely, attachment indicators retain their layout,
+          and resizing a note immediately recalculates the largest fitting font size.
 
           ### Download
 

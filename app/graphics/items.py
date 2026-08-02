@@ -173,8 +173,70 @@ class BaseNodeItem(QGraphicsObject):
 
 
 class NoteItem(BaseNodeItem):
+    BASE_WIDTH = 220.0
+    BASE_HEIGHT = 150.0
+    MIN_FONT_SCALE = 0.65
+    MAX_FONT_SCALE = 3.0
+    MIN_FONT_SIZE = 0.5
+    TEXT_FLAGS = Qt.TextFlag.TextWordWrap | Qt.TextFlag.TextWrapAnywhere
+
     def has_attachments(self) -> bool:
         return bool(self.model.payload.get("attachments"))
+
+    def font_scale(self) -> float:
+        area_ratio = (
+            self.model.width * self.model.height
+            / (self.BASE_WIDTH * self.BASE_HEIGHT)
+        )
+        return min(
+            self.MAX_FONT_SCALE,
+            max(self.MIN_FONT_SCALE, math.sqrt(max(0.0, area_ratio))),
+        )
+
+    def _text_layout(self, font_size: float) -> tuple[QFont, float, float, float]:
+        font = QFont()
+        font.setBold(True)
+        font.setPointSizeF(font_size)
+        metrics = QFontMetricsF(font)
+        text_width = max(1.0, self.model.width - 24.0)
+        title = self.model.payload.get("title", "Notatka")
+        title_bounds = metrics.boundingRect(
+            QRectF(0, 0, text_width, 100000.0), self.TEXT_FLAGS, title
+        )
+        title_height = max(metrics.lineSpacing(), title_bounds.height())
+        body_top = 9.0 + title_height + 4.0
+        attachment_reserve = 0.0
+        if self.has_attachments():
+            attachment_reserve = max(22.0, 22.0 * self.font_scale()) + 4.0
+        body_height = max(
+            0.0, self.model.height - body_top - 10.0 - attachment_reserve
+        )
+        return font, title_height, body_top, body_height
+
+    def text_fits(self, font_size: float) -> bool:
+        font, _title_height, _body_top, body_height = self._text_layout(font_size)
+        text = self.model.payload.get("text", "")
+        if not text:
+            return True
+        metrics = QFontMetricsF(font)
+        text_width = max(1.0, self.model.width - 24.0)
+        body_bounds = metrics.boundingRect(
+            QRectF(0, 0, text_width, 100000.0), self.TEXT_FLAGS, text
+        )
+        return body_height > 0.0 and body_bounds.height() <= body_height + 0.5
+
+    def fitted_font_size(self) -> float:
+        target = 11.0 * self.font_scale()
+        if self.text_fits(target):
+            return target
+        low, high = self.MIN_FONT_SIZE, target
+        for _ in range(18):
+            candidate = (low + high) / 2.0
+            if self.text_fits(candidate):
+                low = candidate
+            else:
+                high = candidate
+        return low
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         bg = QColor(self.model.payload.get("color", "#facc15"))
@@ -183,24 +245,36 @@ class NoteItem(BaseNodeItem):
         painter.drawRoundedRect(self.boundingRect(), 8, 8)
         fallback_text_color = self.model.payload.get("text_color", "#171717")
         painter.setPen(QColor(self.model.payload.get("title_color", fallback_text_color)))
-        title_font = QFont()
-        title_font.setBold(True)
-        title_font.setPointSize(11)
+        scale = self.font_scale()
+        font_size = self.fitted_font_size()
+        title_font, title_height, body_top, body_height = self._text_layout(font_size)
         painter.setFont(title_font)
-        painter.drawText(QRectF(12, 9, self.model.width - 24, 28), Qt.TextFlag.TextWordWrap,
-                         self.model.payload.get("title", "Notatka"))
+        painter.drawText(
+            QRectF(12, 9, self.model.width - 24, title_height),
+            self.TEXT_FLAGS,
+            self.model.payload.get("title", "Notatka"),
+        )
         painter.setFont(title_font)
         text = self.model.payload.get("text", "")
         painter.setPen(QColor(self.model.payload.get("body_color", fallback_text_color)))
-        painter.drawText(QRectF(12, 40, self.model.width - 24, self.model.height - 50),
-                         Qt.TextFlag.TextWordWrap, text)
+        painter.drawText(
+            QRectF(12, body_top, self.model.width - 24, body_height),
+            self.TEXT_FLAGS,
+            text,
+        )
         if self.has_attachments():
             attachment_font = QFont()
-            attachment_font.setPointSize(13)
+            attachment_font.setPointSizeF(13.0 * scale)
             painter.setFont(attachment_font)
             painter.setPen(QColor(self.model.payload.get("title_color", fallback_text_color)))
+            indicator_size = max(22.0, 22.0 * scale)
             painter.drawText(
-                QRectF(self.model.width - 36, self.model.height - 32, 26, 22),
+                QRectF(
+                    self.model.width - indicator_size - 10,
+                    self.model.height - indicator_size - 10,
+                    indicator_size,
+                    indicator_size,
+                ),
                 Qt.AlignmentFlag.AlignCenter,
                 "🔗",
             )
