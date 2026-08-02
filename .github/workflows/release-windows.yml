@@ -66,9 +66,13 @@ jobs:
           $notes = @"
           ## OpenTrace $version
 
-          This maintenance release completes English translations across relationship
-          dialogs and labels, note and image creation dialogs, OSINT tool controls,
-          note-panel guidance, and interface hover tooltips.
+          This release adds file attachments to notes. Attached files are copied into
+          the investigation folder, remain available while editing a note, and are
+          preserved when a case is packed into a ZIP archive. Notes containing files
+          now display a link indicator directly on the board.
+
+          It also keeps the red accent point visible on the welcome screen and fixes
+          language switching while an investigation is open.
 
           ### Download
 
