@@ -1,12 +1,13 @@
 # OpenTrace
 <img width="1983" height="793" alt="OpenTraceBaner" src="https://github.com/user-attachments/assets/560ccaea-c76b-4847-be24-cfc06c7ed107" />
-
+<p align="center">
 [![Tests](https://github.com/Gacut/OpenTrace/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/Gacut/OpenTrace/actions/workflows/tests.yml)
 [![Latest release](https://img.shields.io/github/v/release/Gacut/OpenTrace?style=flat-square&label=release)](https://github.com/Gacut/OpenTrace/releases/latest)
 [![License](https://img.shields.io/github/license/Gacut/OpenTrace?style=flat-square)](https://github.com/Gacut/OpenTrace/blob/main/LICENSE)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-64748b?style=flat-square)
 ![Offline](https://img.shields.io/badge/privacy-fully%20offline-16a34a?style=flat-square)
+</p>
 
 OpenTrace is a private-by-design, offline desktop workspace for organizing
 OSINT investigations. It provides a visual investigation board without
